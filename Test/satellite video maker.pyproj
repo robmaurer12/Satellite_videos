@@ -3,13 +3,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>6893e0ce-6d49-435a-b77a-fd58fbfe614e</ProjectGuid>
-    <ProjectHome>.</ProjectHome>
+    <ProjectHome>
+    </ProjectHome>
     <StartupFile>main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>Test</Name>
+    <Name>satellite video maker</Name>
     <RootNamespace>Test</RootNamespace>
     <TestFramework>Pytest</TestFramework>
   </PropertyGroup>
