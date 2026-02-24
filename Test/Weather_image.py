@@ -148,6 +148,33 @@ def get_weather_image(
     except Exception as e:
         print(f"Error drawing Mexico: {e}")
     
+    # Add coast borders
+    try:
+        coaster = ee.FeatureCollection('projects/ee-robertmaurer28/assets/coaster')
+        coast_fc = coaster.filterBounds(polygon)
+        coast_list = coast_fc.toList(50).getInfo()
+        print(f"Found {len(coast_list)} coast features")
+        
+        for feat in coast_list:
+            geom = feat['geometry']
+            if geom['type'] == 'Polygon':
+                coords = geom['coordinates'][0]
+                points = np.array([[
+                    int((lon - lon_left) / (lon_right - lon_left) * w),
+                    int((lat_top - lat) / (lat_top - lat_bottom) * h)
+                ] for lon, lat in coords], np.int32)
+                cv2.polylines(img_np, [points], True, (0, 0, 0), 3)
+            elif geom['type'] == 'MultiPolygon':
+                for poly in geom['coordinates']:
+                    coords = poly[0]
+                    points = np.array([[
+                        int((lon - lon_left) / (lon_right - lon_left) * w),
+                        int((lat_top - lat) / (lat_top - lat_bottom) * h)
+                    ] for lon, lat in coords], np.int32)
+                    cv2.polylines(img_np, [points], True, (0, 0, 0), 3)
+    except Exception as e:
+        print(f"Error drawing coast: {e}")
+    
     print("Adding date text...")
     date_str = f"{days_in_month:02d}-{month:02d}-{year}"
     cv2.putText(img_np, date_str, (w - 200, h - 50), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 3, cv2.LINE_AA)
