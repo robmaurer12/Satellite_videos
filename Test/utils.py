@@ -167,3 +167,75 @@ def open_map():
     
     threading.Thread(target=serve_map, daemon=True).start()
     webbrowser.open(f"http://localhost:{PORT}/{map_file}")
+
+
+def get_weather_inputs() -> tuple[str, int, int, float, float, float, float]:
+    root = tk.Tk()
+    root.title("Weather parameters")
+
+    tk.Label(root, text="Place name:").grid(row=0, column=0, sticky="e")
+    place_var = tk.StringVar(value="USA")
+    tk.Entry(root, textvariable=place_var, width=25).grid(row=0, column=1)
+
+    tk.Label(root, text="Year:").grid(row=1, column=0, sticky="e")
+    year_var = tk.IntVar(value=2024)
+    tk.Spinbox(root, from_=1980, to=2030, textvariable=year_var, width=15).grid(row=1, column=1)
+
+    tk.Label(root, text="Month:").grid(row=2, column=0, sticky="e")
+    month_var = tk.IntVar(value=12)
+    tk.Spinbox(root, from_=1, to=12, textvariable=month_var, width=15).grid(row=2, column=1)
+
+    tk.Label(root, text="Lat top:").grid(row=3, column=0, sticky="e")
+    lat_top_var = tk.DoubleVar(value=52.0)
+    tk.Entry(root, textvariable=lat_top_var, width=15).grid(row=3, column=1)
+
+    tk.Label(root, text="Lat bottom:").grid(row=4, column=0, sticky="e")
+    lat_bottom_var = tk.DoubleVar(value=24.0)
+    tk.Entry(root, textvariable=lat_bottom_var, width=15).grid(row=4, column=1)
+
+    tk.Label(root, text="Lon left:").grid(row=5, column=0, sticky="e")
+    lon_left_var = tk.DoubleVar(value=-125.0)
+    tk.Entry(root, textvariable=lon_left_var, width=15).grid(row=5, column=1)
+
+    tk.Label(root, text="Lon right:").grid(row=6, column=0, sticky="e")
+    lon_right_var = tk.DoubleVar(value=-66.0)
+    tk.Entry(root, textvariable=lon_right_var, width=15).grid(row=6, column=1)
+
+    tk.Label(root, text="Lon / Lat ratio:").grid(row=7, column=0, sticky="e")
+    ratio_var = tk.StringVar(value="")
+    ratio_entry = tk.Entry(root, textvariable=ratio_var, width=15, state="readonly")
+    ratio_entry.grid(row=7, column=1)
+
+    def update_ratio(*_):
+        try:
+            lat_diff = abs(lat_bottom_var.get() - lat_top_var.get())
+            lon_diff = abs(lon_right_var.get() - lon_left_var.get())
+            ratio = lon_diff / lat_diff if lat_diff else float("inf")
+            ratio_var.set(f"{ratio:.4f}")
+        except tk.TclError:
+            ratio_var.set("Err")
+
+    for var in (lat_top_var, lat_bottom_var, lon_left_var, lon_right_var):
+        var.trace_add("write", update_ratio)
+    update_ratio()
+
+    def launch_map():
+        open_map()
+        messagebox.showinfo("Instructions", "Click the map to see lat/lon.\nCopy them into the input boxes manually.")
+
+    tk.Button(root, text="Open Map", command=launch_map).grid(row=8, column=0, columnspan=2, pady=6)
+    tk.Button(root, text="OK", command=root.quit).grid(row=9, column=0, columnspan=2, pady=6)
+
+    root.mainloop()
+
+    result = (
+        place_var.get().strip() or "Unknown",
+        int(year_var.get()),
+        int(month_var.get()),
+        float(lat_top_var.get()),
+        float(lat_bottom_var.get()),
+        float(lon_left_var.get()),
+        float(lon_right_var.get())
+    )
+    root.destroy()
+    return result
