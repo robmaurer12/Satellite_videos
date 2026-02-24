@@ -31,8 +31,10 @@ def get_days_in_month(year: int, month: int) -> int:
     return (datetime(year, month + 1, 1) - datetime(year, month, 1)).days
 
 
-def get_state_borders():
-    return ee.FeatureCollection('TIGER/2018/States')
+def get_borders():
+    countries = ee.FeatureCollection('USDOS/LSIB_SIMPLE/2017')
+    states = ee.FeatureCollection('TIGER/2018/States')
+    return countries, states
 
 
 def create_weather_timelapse(
@@ -82,10 +84,12 @@ def create_weather_timelapse(
         region = polygon.bounds().getInfo()['coordinates']
         frame_files = []
         
-        states = get_state_borders()
+        countries, states = get_borders()
         empty = ee.Image().byte()
-        borders = empty.paint(featureCollection=states, color=1, width=2)
-        borders_visualized = borders.visualize(palette='000000', opacity=1)
+        country_borders = empty.paint(featureCollection=countries, color=1, width=3)
+        country_borders_viz = country_borders.visualize(palette='000000', opacity=1)
+        state_borders = empty.paint(featureCollection=states, color=1, width=2)
+        state_borders_viz = state_borders.visualize(palette='444444', opacity=1)
         
         for i in range(num_images):
             try:
@@ -93,7 +97,7 @@ def create_weather_timelapse(
                 temp_visualized = img.visualize(
                     min=TEMP_MIN, max=TEMP_MAX, palette=','.join(VIS_PALETTE)
                 )
-                final_image = temp_visualized.blend(borders_visualized)
+                final_image = temp_visualized.blend(country_borders_viz).blend(state_borders_viz)
                 
                 url = final_image.getThumbURL({
                     'region': region,
@@ -107,9 +111,9 @@ def create_weather_timelapse(
                 
                 img_np = np.array(pil_img)
                 
-                date_img = collection_list.get(i)
-                img_info = ee.Image(date_img).getInfo()
-                img_date = str(year) + "-" + f"{month:02d}"
+                day_num = (i * days_in_month) // num_images + 1
+                day_num = min(day_num, days_in_month)
+                date_str = f"{day_num:02d}-{month:02d}-{year}"
                 
                 fig = plt.figure(figsize=(12, 8), facecolor='black')
                 ax = fig.add_axes([0, 0, 1, 1])
@@ -119,7 +123,7 @@ def create_weather_timelapse(
                 ax.text(
                     img_np.shape[1] - 30,
                     img_np.shape[0] - 30,
-                    img_date,
+                    date_str,
                     color='white',
                     fontsize=24,
                     fontweight='bold',
@@ -128,20 +132,20 @@ def create_weather_timelapse(
                     bbox=dict(facecolor='black', alpha=0.6, pad=5, edgecolor='white')
                 )
                 
-                ax_legend = fig.add_axes([0.02, 0.1, 0.025, 0.35])
-                temps_k = np.linspace(TEMP_MAX, TEMP_MIN, 256).reshape(-1, 1)
+                ax_legend = fig.add_axes([0.35, 0.02, 0.3, 0.025])
+                temps_k = np.linspace(TEMP_MIN, TEMP_MAX, 256).reshape(1, -1)
                 cmap = mcolors.LinearSegmentedColormap.from_list('temp', VIS_PALETTE)
                 ax_legend.imshow(temps_k, cmap=cmap, aspect='auto')
                 ax_legend.set_axis_off()
-                ax_legend.set_title('Temp (K)', color='white', fontsize=10, fontweight='bold', pad=5)
                 
+                temps_c = np.linspace(TEMP_MIN - 273.15, TEMP_MAX - 273.15, 5)
                 tick_positions = np.linspace(0, 255, 5)
-                tick_labels = [f"{int(t)}K" for t in np.linspace(TEMP_MAX, TEMP_MIN, 5)]
-                ax_legend.set_yticks(tick_positions)
-                ax_legend.set_yticklabels(tick_labels, color='white', fontsize=8, fontweight='bold')
+                tick_labels = [f"{int(t)}°C" for t in temps_c]
+                ax_legend.set_xticks(tick_positions)
+                ax_legend.set_xticklabels(tick_labels, color='black', fontsize=9, fontweight='bold')
                 
                 frame_path = os.path.join(output_dir, f"weather_frame_{i:04d}.png")
-                plt.savefig(frame_path, bbox_inches=None, pad_inches=0, dpi=100, facecolor='black')
+                plt.savefig(frame_path, bbox_inches=None, pad_inches=0, dpi=100, facecolor='white')
                 plt.close()
                 frame_files.append(frame_path)
                 

@@ -21,8 +21,10 @@ TEMP_MIN = 223
 TEMP_MAX = 318
 
 
-def get_state_borders():
-    return ee.FeatureCollection('TIGER/2018/States')
+def get_borders():
+    countries = ee.FeatureCollection('USDOS/LSIB_SIMPLE/2017')
+    states = ee.FeatureCollection('TIGER/2018/States')
+    return countries, states
 
 
 def get_weather_image(
@@ -64,12 +66,16 @@ def get_weather_image(
             min=TEMP_MIN, max=TEMP_MAX, palette=','.join(VIS_PALETTE)
         )
         
-        states = get_state_borders()
-        empty = ee.Image().byte()
-        borders = empty.paint(featureCollection=states, color=1, width=2)
-        borders_visualized = borders.visualize(palette='000000', opacity=1)
+        countries, states = get_borders()
         
-        final_image = temp_visualized.blend(borders_visualized)
+        empty = ee.Image().byte()
+        country_borders = empty.paint(featureCollection=countries, color=1, width=3)
+        country_borders_viz = country_borders.visualize(palette='000000', opacity=1)
+        
+        state_borders = empty.paint(featureCollection=states, color=1, width=2)
+        state_borders_viz = state_borders.visualize(palette='444444', opacity=1)
+        
+        final_image = temp_visualized.blend(country_borders_viz).blend(state_borders_viz)
         
         region = polygon.bounds().getInfo()['coordinates']
         url = final_image.getThumbURL({
@@ -91,7 +97,7 @@ def get_weather_image(
         ax.imshow(img_np)
         ax.set_axis_off()
         
-        date_str = f"{year}-{month:02d}"
+        date_str = f"{days_in_month:02d}-{month:02d}-{year}"
         ax.text(
             img_np.shape[1] - 30,
             img_np.shape[0] - 30,
@@ -104,23 +110,23 @@ def get_weather_image(
             bbox=dict(facecolor='black', alpha=0.6, pad=5, edgecolor='white')
         )
         
-        ax_legend = fig.add_axes([0.02, 0.1, 0.025, 0.35])
-        temps_k = np.linspace(TEMP_MAX, TEMP_MIN, 256).reshape(-1, 1)
+        ax_legend = fig.add_axes([0.35, 0.02, 0.3, 0.025])
+        temps_k = np.linspace(TEMP_MIN, TEMP_MAX, 256).reshape(1, -1)
         cmap = mcolors.LinearSegmentedColormap.from_list('temp', VIS_PALETTE)
         ax_legend.imshow(temps_k, cmap=cmap, aspect='auto')
         ax_legend.set_axis_off()
-        ax_legend.set_title('Temp (K)', color='white', fontsize=10, fontweight='bold', pad=5)
         
+        temps_c = np.linspace(TEMP_MIN - 273.15, TEMP_MAX - 273.15, 5)
         tick_positions = np.linspace(0, 255, 5)
-        tick_labels = [f"{int(t)}K" for t in np.linspace(TEMP_MAX, TEMP_MIN, 5)]
-        ax_legend.set_yticks(tick_positions)
-        ax_legend.set_yticklabels(tick_labels, color='white', fontsize=8, fontweight='bold')
+        tick_labels = [f"{int(t)}°C" for t in temps_c]
+        ax_legend.set_xticks(tick_positions)
+        ax_legend.set_xticklabels(tick_labels, color='black', fontsize=9, fontweight='bold')
         
         output_dir = os.path.join(DEFAULT_OUTPUT_DIR, place_name)
         os.makedirs(output_dir, exist_ok=True)
         
         save_path = os.path.join(output_dir, f"{place_name}_weather_{year}_{month:02d}.png")
-        plt.savefig(save_path, bbox_inches=None, pad_inches=0, dpi=150, facecolor='black')
+        plt.savefig(save_path, bbox_inches=None, pad_inches=0, dpi=150, facecolor='white')
         plt.close()
         
         print(f"Saved: {save_path}")
