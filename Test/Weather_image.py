@@ -11,10 +11,10 @@ from utils import get_weather_inputs, DEFAULT_OUTPUT_DIR
 ee.Initialize(project='solid-bliss-390413')
 
 VIS_PALETTE = [
-    '#000066', '#000099', '#2200B4', '#6600FF', '#9900FF', '#0000FF', 
-    '#0E6DC4', '#5BADFF', '#69E1FD', '#66FFFF', '#93FFFF', '#66FF33', 
-    '#FFFF00', '#FFCC00', '#FF9933', '#FF6600', '#FF0000', '#CC0000', 
-    '#F5496E', '#FFCCFF'
+    '#FFCCFF', '#F5496E', '#CC0000', '#FF0000', '#FF6600', '#FF9933', 
+    '#FFCC00', '#FFFF00', '#66FF33', '#93FFFF', '#66FFFF', '#69E1FD', 
+    '#5BADFF', '#0E6DC4', '#0000FF', '#9900FF', '#6600FF', '#2200B4', 
+    '#000099', '#000066'
 ]
 TEMP_MIN = 223
 TEMP_MAX = 318
