@@ -5,7 +5,7 @@
     <ProjectGuid>6893e0ce-6d49-435a-b77a-fd58fbfe614e</ProjectGuid>
     <ProjectHome>
     </ProjectHome>
-    <StartupFile>main.py</StartupFile>
+    <StartupFile>Video_thumbnail.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -24,6 +24,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="main.py" />
+    <Compile Include="Video_thumbnail.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Satellite_image.py" />
     <Compile Include="Satellite_video.py" />
   </ItemGroup>
