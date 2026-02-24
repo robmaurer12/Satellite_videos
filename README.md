@@ -16,30 +16,62 @@ A Python application for creating satellite imagery time-lapse videos from Lands
 
 ## Installation
 
+1. Clone the repository:
+```bash
+git clone https://github.com/robmaurer12/Satellite_videos.git
+cd Satellite_videos
+```
+
+2. Install dependencies:
 ```bash
 pip install earthengine-api opencv-python numpy Pillow matplotlib folium requests
 ```
 
+3. Authenticate with Google Earth Engine:
+```bash
+earthengine authenticate
+```
+
 ## Usage
 
-Run `main.py` to access all tools through the GUI:
+### Option 1: GUI Launcher
+
+Run the main launcher to access all tools through a simple GUI:
 
 ```bash
 python Test/main.py
 ```
 
-### Individual Modules
+### Option 2: Command Line
 
-- **Satellite_image.py** - Downloads Landsat images for a given location and year range
-- **Satellite_video.py** - Creates time-lapse videos from downloaded images
-- **Video_thumbnail.py** - Generates thumbnail images with text overlays
+Run individual modules directly from the command prompt:
+
+```bash
+# Download satellite images
+python Test/Satellite_image.py
+
+# Create time-lapse video
+python Test/Satellite_video.py
+
+# Create thumbnail
+python Test/Video_thumbnail.py
+```
+
+## Workflow
+
+1. **Download Images** - Run `Satellite_image.py` to download Landsat images for your chosen location and years
+2. **Create Video** - Run `Satellite_video.py` to generate a time-lapse MP4 from the downloaded images
+3. **Add Thumbnail** (optional) - Run `Video_thumbnail.py` to create a thumbnail for the video
 
 ## Configuration
 
 Default output directory: `C:\Users\Public\Documents\{place_name\}`
 
-Set your Google Earth Engine project in the code or as an environment variable.
+Set your Google Earth Engine project in `Satellite_image.py`:
+```python
+ee.Initialize(project='your-project-id')
+```
 
-## Code Grade: 55/100
+## Code Grade: 80/100
 
 See [CODE_REVIEW.md](./CODE_REVIEW.md) for detailed code review and improvement recommendations.
