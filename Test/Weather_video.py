@@ -158,6 +158,32 @@ def create_weather_timelapse(
             except Exception as e:
                 print(f"Error drawing Mexico: {e}")
             
+            # Add coast borders
+            try:
+                coaster = ee.FeatureCollection('projects/ee-robertmaurer28/assets/coaster')
+                coast_fc = coaster.filterBounds(polygon)
+                coast_list = coast_fc.toList(50).getInfo()
+                
+                for feat in coast_list:
+                    geom = feat['geometry']
+                    if geom['type'] == 'Polygon':
+                        coords = geom['coordinates'][0]
+                        points = np.array([[
+                            int((lon - lon_left) / (lon_right - lon_left) * w),
+                            int((lat_top - lat) / (lat_top - lat_bottom) * h)
+                        ] for lon, lat in coords], np.int32)
+                        cv2.polylines(img_np, [points], True, (0, 0, 0), 3)
+                    elif geom['type'] == 'MultiPolygon':
+                        for poly in geom['coordinates']:
+                            coords = poly[0]
+                            points = np.array([[
+                                int((lon - lon_left) / (lon_right - lon_left) * w),
+                                int((lat_top - lat) / (lat_top - lat_bottom) * h)
+                            ] for lon, lat in coords], np.int32)
+                            cv2.polylines(img_np, [points], True, (0, 0, 0), 3)
+            except Exception as e:
+                print(f"Error drawing coast: {e}")
+            
             day_num = (i * days_in_month) // num_images + 1
             day_num = min(day_num, days_in_month)
             date_str = f"{day_num:02d}-{month:02d}-{year}"
