@@ -89,10 +89,14 @@ def create_weather_timelapse(
         try:
             img = ee.Image(collection_list.get(i))
             
-            url = img.getDownloadURL({
+            vis_image = img.visualize(
+                min=TEMP_MIN, max=TEMP_MAX, palette=','.join(VIS_PALETTE)
+            )
+            
+            url = vis_image.getThumbURL({
                 'region': region,
                 'dimensions': [OUT_W, OUT_H],
-                'format': 'PNG',
+                'format': 'png',
             })
             
             response = requests.get(url)

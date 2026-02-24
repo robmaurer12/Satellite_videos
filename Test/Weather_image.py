@@ -65,12 +65,16 @@ def get_weather_image(
     
     image = collection.median()
     
+    vis_image = image.visualize(
+        min=TEMP_MIN, max=TEMP_MAX, palette=','.join(VIS_PALETTE)
+    )
+    
     region = polygon.bounds().getInfo()['coordinates']
     
-    url = image.getDownloadURL({
+    url = vis_image.getThumbURL({
         'region': region,
         'dimensions': [1920, 1080],
-        'format': 'PNG',
+        'format': 'png',
     })
     
     print("Downloading image...")
