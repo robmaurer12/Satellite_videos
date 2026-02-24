@@ -21,12 +21,6 @@ TEMP_MIN = 223
 TEMP_MAX = 318
 
 
-def get_borders():
-    countries = ee.FeatureCollection('USDOS/LSIB_SIMPLE/2017')
-    states = ee.FeatureCollection('TIGER/2018/States')
-    return countries, states
-
-
 def get_weather_image(
     place_name: str,
     year: int,
@@ -66,16 +60,8 @@ def get_weather_image(
             min=TEMP_MIN, max=TEMP_MAX, palette=','.join(VIS_PALETTE)
         )
         
-        countries, states = get_borders()
-        
-        empty = ee.Image().byte()
-        country_borders = empty.paint(featureCollection=countries, color=1, width=4)
-        country_borders_viz = country_borders.visualize(palette='000000', opacity=1)
-        
-        final_image = temp_visualized.blend(country_borders_viz)
-        
         region = polygon.bounds().getInfo()['coordinates']
-        url = final_image.getThumbURL({
+        url = temp_visualized.getThumbURL({
             'region': region,
             'dimensions': 1920,
             'format': 'png',
@@ -107,7 +93,7 @@ def get_weather_image(
             bbox=dict(facecolor='black', alpha=0.6, pad=5, edgecolor='white')
         )
         
-        ax_legend = fig.add_axes([0.02, 0.02, 0.3, 0.025])
+        ax_legend = fig.add_axes([0.01, 0.01, 0.25, 0.02])
         temps_k = np.linspace(TEMP_MIN, TEMP_MAX, 256).reshape(1, -1)
         cmap = mcolors.LinearSegmentedColormap.from_list('temp', VIS_PALETTE)
         ax_legend.imshow(temps_k, cmap=cmap, aspect='auto')
@@ -117,7 +103,10 @@ def get_weather_image(
         tick_positions = np.linspace(0, 255, 5)
         tick_labels = [f"{int(t)}°C" for t in temps_c]
         ax_legend.set_xticks(tick_positions)
-        ax_legend.set_xticklabels(tick_labels, color='black', fontsize=9, fontweight='bold')
+        ax_legend.set_xticklabels(tick_labels, color='black', fontsize=8, fontweight='bold')
+        
+        for tick in ax_legend.xaxis.get_major_ticks():
+            tick.label1.set_color('black')
         
         output_dir = os.path.join(DEFAULT_OUTPUT_DIR, place_name)
         os.makedirs(output_dir, exist_ok=True)

@@ -31,12 +31,6 @@ def get_days_in_month(year: int, month: int) -> int:
     return (datetime(year, month + 1, 1) - datetime(year, month, 1)).days
 
 
-def get_borders():
-    countries = ee.FeatureCollection('USDOS/LSIB_SIMPLE/2017')
-    states = ee.FeatureCollection('TIGER/2018/States')
-    return countries, states
-
-
 def create_weather_timelapse(
     place_name: str,
     year: int,
@@ -84,20 +78,14 @@ def create_weather_timelapse(
         region = polygon.bounds().getInfo()['coordinates']
         frame_files = []
         
-        countries, states = get_borders()
-        empty = ee.Image().byte()
-        country_borders = empty.paint(featureCollection=countries, color=1, width=4)
-        country_borders_viz = country_borders.visualize(palette='000000', opacity=1)
-        
         for i in range(num_images):
             try:
                 img = ee.Image(collection_list.get(i))
                 temp_visualized = img.visualize(
                     min=TEMP_MIN, max=TEMP_MAX, palette=','.join(VIS_PALETTE)
                 )
-                final_image = temp_visualized.blend(country_borders_viz)
                 
-                url = final_image.getThumbURL({
+                url = temp_visualized.getThumbURL({
                     'region': region,
                     'dimensions': 1920,
                     'format': 'png',
@@ -130,7 +118,7 @@ def create_weather_timelapse(
                     bbox=dict(facecolor='black', alpha=0.6, pad=5, edgecolor='white')
                 )
                 
-                ax_legend = fig.add_axes([0.02, 0.02, 0.3, 0.025])
+                ax_legend = fig.add_axes([0.01, 0.01, 0.25, 0.02])
                 temps_k = np.linspace(TEMP_MIN, TEMP_MAX, 256).reshape(1, -1)
                 cmap = mcolors.LinearSegmentedColormap.from_list('temp', VIS_PALETTE)
                 ax_legend.imshow(temps_k, cmap=cmap, aspect='auto')
@@ -140,7 +128,10 @@ def create_weather_timelapse(
                 tick_positions = np.linspace(0, 255, 5)
                 tick_labels = [f"{int(t)}°C" for t in temps_c]
                 ax_legend.set_xticks(tick_positions)
-                ax_legend.set_xticklabels(tick_labels, color='black', fontsize=9, fontweight='bold')
+                ax_legend.set_xticklabels(tick_labels, color='black', fontsize=8, fontweight='bold')
+                
+                for tick in ax_legend.xaxis.get_major_ticks():
+                    tick.label1.set_color('black')
                 
                 frame_path = os.path.join(output_dir, f"weather_frame_{i:04d}.png")
                 plt.savefig(frame_path, bbox_inches=None, pad_inches=0, dpi=100, facecolor='white')
