@@ -13,14 +13,14 @@ def run_script(script_name: str) -> None:
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Satellite Weather Tools")
-    root.geometry("270x380")
+    root.geometry("270x440")
 
     buttons = [
         ("Get Satellite Images", "Satellite_image.py", True),
         ("Create Satellite Video", "Satellite_video.py", True),
         ("Create Thumbnail", "Video_thumbnail.py", True),
         ("Get Weather Image", "Weather_image.py", True),
-        ("Create Weather Video", None, False),
+        ("Create Weather Video", "Weather_video.py", True),
     ]
 
     for label, script, enabled in buttons:
