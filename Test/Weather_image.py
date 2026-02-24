@@ -1,6 +1,7 @@
 import ee
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import os
 import sys
 from datetime import datetime
@@ -20,6 +21,10 @@ TEMP_MIN = 223
 TEMP_MAX = 318
 
 
+def get_state_borders():
+    return ee.FeatureCollection('TIGER/2018/States')
+
+
 def get_weather_image(
     place_name: str,
     year: int,
@@ -36,8 +41,7 @@ def get_weather_image(
          [lon_right, lat_bottom]]
     ])
     
-    days_in_month = datetime(year, month, 1).replace(day=28).day + 3
-    days_in_month = min(days_in_month, 28) if month == 2 else min(days_in_month, {1:31,3:31,4:30,5:31,6:30,7:31,8:31,9:30,10:31,11:30,12:31}[month])
+    days_in_month = (datetime(year, month + 1, 1) - datetime(year, month, 1)).days if month < 12 else 31
     
     start_date = f"{year}-{month:02d}-01"
     end_date = f"{year}-{month:02d}-{days_in_month:02d}"
@@ -56,14 +60,22 @@ def get_weather_image(
         
         image = collection.median()
         
+        temp_visualized = image.visualize(
+            visParams={'min': TEMP_MIN, 'max': TEMP_MAX, 'palette': VIS_PALETTE}
+        )
+        
+        states = get_state_borders()
+        empty = ee.Image().byte()
+        borders = empty.paint(featureCollection=states, color=1, width=2)
+        borders_visualized = borders.visualize(palette='000000', opacity=1)
+        
+        final_image = temp_visualized.blend(borders_visualized)
+        
         region = polygon.bounds().getInfo()['coordinates']
-        url = image.getThumbURL({
+        url = final_image.getThumbURL({
             'region': region,
             'dimensions': 1920,
             'format': 'png',
-            'min': TEMP_MIN,
-            'max': TEMP_MAX,
-            'palette': VIS_PALETTE,
         })
         
         import requests
@@ -74,34 +86,49 @@ def get_weather_image(
         img = Image.open(BytesIO(response.content))
         img_np = np.array(img)
         
-        plt.figure(figsize=(12, 8))
-        plt.imshow(img_np)
-        plt.axis('off')
+        fig = plt.figure(figsize=(12, 8), facecolor='black')
+        ax = fig.add_axes([0, 0, 1, 1])
+        ax.imshow(img_np)
+        ax.set_axis_off()
         
         date_str = f"{year}-{month:02d}"
-        plt.text(
+        ax.text(
             img_np.shape[1] - 30,
             img_np.shape[0] - 30,
             date_str,
             color='white',
-            fontsize=30,
+            fontsize=24,
             fontweight='bold',
             ha='right',
             va='bottom',
-            bbox=dict(facecolor='black', alpha=0.5, pad=5)
+            bbox=dict(facecolor='black', alpha=0.6, pad=5, edgecolor='white')
         )
+        
+        ax_legend = fig.add_axes([0.02, 0.1, 0.025, 0.35])
+        temps_k = np.linspace(TEMP_MAX, TEMP_MIN, 256).reshape(-1, 1)
+        cmap = mcolors.LinearSegmentedColormap.from_list('temp', VIS_PALETTE)
+        ax_legend.imshow(temps_k, cmap=cmap, aspect='auto')
+        ax_legend.set_axis_off()
+        ax_legend.set_title('Temp (K)', color='white', fontsize=10, fontweight='bold', pad=5)
+        
+        tick_positions = np.linspace(0, 255, 5)
+        tick_labels = [f"{int(t)}K" for t in np.linspace(TEMP_MAX, TEMP_MIN, 5)]
+        ax_legend.set_yticks(tick_positions)
+        ax_legend.set_yticklabels(tick_labels, color='white', fontsize=8, fontweight='bold')
         
         output_dir = os.path.join(DEFAULT_OUTPUT_DIR, place_name)
         os.makedirs(output_dir, exist_ok=True)
         
         save_path = os.path.join(output_dir, f"{place_name}_weather_{year}_{month:02d}.png")
-        plt.savefig(save_path, bbox_inches='tight', pad_inches=0.1, dpi=200)
+        plt.savefig(save_path, bbox_inches=None, pad_inches=0, dpi=150, facecolor='black')
         plt.close()
         
         print(f"Saved: {save_path}")
         
     except Exception as e:
         print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":

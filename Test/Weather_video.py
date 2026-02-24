@@ -1,6 +1,8 @@
 import ee
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import os
 import sys
 from datetime import datetime
@@ -27,6 +29,10 @@ def get_days_in_month(year: int, month: int) -> int:
     if month == 12:
         return 31
     return (datetime(year, month + 1, 1) - datetime(year, month, 1)).days
+
+
+def get_state_borders():
+    return ee.FeatureCollection('TIGER/2018/States')
 
 
 def create_weather_timelapse(
@@ -76,24 +82,67 @@ def create_weather_timelapse(
         region = polygon.bounds().getInfo()['coordinates']
         frame_files = []
         
+        states = get_state_borders()
+        empty = ee.Image().byte()
+        borders = empty.paint(featureCollection=states, color=1, width=2)
+        borders_visualized = borders.visualize(palette='000000', opacity=1)
+        
         for i in range(num_images):
             try:
                 img = ee.Image(collection_list.get(i))
-                url = img.getThumbURL({
+                temp_visualized = img.visualize(
+                    visParams={'min': TEMP_MIN, 'max': TEMP_MAX, 'palette': VIS_PALETTE}
+                )
+                final_image = temp_visualized.blend(borders_visualized)
+                
+                url = final_image.getThumbURL({
                     'region': region,
                     'dimensions': 1920,
                     'format': 'png',
-                    'min': TEMP_MIN,
-                    'max': TEMP_MAX,
-                    'palette': VIS_PALETTE,
                 })
                 
                 response = requests.get(url)
                 pil_img = Image.open(BytesIO(response.content))
                 pil_img = pil_img.resize((OUT_W, OUT_H), Image.LANCZOS)
                 
+                img_np = np.array(pil_img)
+                
+                date_img = collection_list.get(i)
+                img_info = ee.Image(date_img).getInfo()
+                img_date = str(year) + "-" + f"{month:02d}"
+                
+                fig = plt.figure(figsize=(12, 8), facecolor='black')
+                ax = fig.add_axes([0, 0, 1, 1])
+                ax.imshow(img_np)
+                ax.set_axis_off()
+                
+                ax.text(
+                    img_np.shape[1] - 30,
+                    img_np.shape[0] - 30,
+                    img_date,
+                    color='white',
+                    fontsize=24,
+                    fontweight='bold',
+                    ha='right',
+                    va='bottom',
+                    bbox=dict(facecolor='black', alpha=0.6, pad=5, edgecolor='white')
+                )
+                
+                ax_legend = fig.add_axes([0.02, 0.1, 0.025, 0.35])
+                temps_k = np.linspace(TEMP_MAX, TEMP_MIN, 256).reshape(-1, 1)
+                cmap = mcolors.LinearSegmentedColormap.from_list('temp', VIS_PALETTE)
+                ax_legend.imshow(temps_k, cmap=cmap, aspect='auto')
+                ax_legend.set_axis_off()
+                ax_legend.set_title('Temp (K)', color='white', fontsize=10, fontweight='bold', pad=5)
+                
+                tick_positions = np.linspace(0, 255, 5)
+                tick_labels = [f"{int(t)}K" for t in np.linspace(TEMP_MAX, TEMP_MIN, 5)]
+                ax_legend.set_yticks(tick_positions)
+                ax_legend.set_yticklabels(tick_labels, color='white', fontsize=8, fontweight='bold')
+                
                 frame_path = os.path.join(output_dir, f"weather_frame_{i:04d}.png")
-                pil_img.save(frame_path)
+                plt.savefig(frame_path, bbox_inches=None, pad_inches=0, dpi=100, facecolor='black')
+                plt.close()
                 frame_files.append(frame_path)
                 
                 if (i + 1) % 10 == 0:
@@ -130,6 +179,8 @@ def create_weather_timelapse(
         
     except Exception as e:
         print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
