@@ -61,7 +61,7 @@ def get_weather_image(
         image = collection.median()
         
         temp_visualized = image.visualize(
-            visParams={'min': TEMP_MIN, 'max': TEMP_MAX, 'palette': VIS_PALETTE}
+            min=TEMP_MIN, max=TEMP_MAX, palette=','.join(VIS_PALETTE)
         )
         
         states = get_state_borders()

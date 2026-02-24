@@ -91,7 +91,7 @@ def create_weather_timelapse(
             try:
                 img = ee.Image(collection_list.get(i))
                 temp_visualized = img.visualize(
-                    visParams={'min': TEMP_MIN, 'max': TEMP_MAX, 'palette': VIS_PALETTE}
+                    min=TEMP_MIN, max=TEMP_MAX, palette=','.join(VIS_PALETTE)
                 )
                 final_image = temp_visualized.blend(borders_visualized)
                 
