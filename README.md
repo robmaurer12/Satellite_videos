@@ -32,29 +32,40 @@ pip install earthengine-api opencv-python numpy Pillow matplotlib folium request
 earthengine authenticate
 ```
 
-## Usage
+## Usage (Windows)
 
-### Option 1: GUI Launcher
+### Option 1: Run with batch file (Recommended)
 
-Run the main launcher to access all tools through a simple GUI:
+Simply double-click `run.bat` in the project folder - it will automatically find Python and launch the GUI.
 
-```bash
-python Test/main.py
+### Option 2: Command Prompt
+
+Run the main launcher:
+
+```cmd
+python Test\main.py
 ```
 
-### Option 2: Command Line
+If Python is not in your PATH, use the full path:
 
-Run individual modules directly from the command prompt:
+```cmd
+C:\Users\YourUsername\AppData\Local\Programs\Python\Python312\python.exe Test\main.py
+```
 
-```bash
-# Download satellite images
-python Test/Satellite_image.py
+Or find Python in your system and run:
 
-# Create time-lapse video
-python Test/Satellite_video.py
+```cmd
+where python
+```
 
-# Create thumbnail
-python Test/Video_thumbnail.py
+### Option 3: Command Line
+
+Run individual modules directly:
+
+```cmd
+python Test\Satellite_image.py
+python Test\Satellite_video.py
+python Test\Video_thumbnail.py
 ```
 
 ## Workflow
@@ -67,10 +78,23 @@ python Test/Video_thumbnail.py
 
 Default output directory: `C:\Users\Public\Documents\{place_name\}`
 
-Set your Google Earth Engine project in `Satellite_image.py`:
+Set your Google Earth Engine project in `Test\Satellite_image.py`:
 ```python
 ee.Initialize(project='your-project-id')
 ```
+
+## Troubleshooting
+
+**"python is not recognized"** - Python is not in your system PATH. Either:
+- Add Python to your PATH (recommended), or
+- Use the full path to python.exe (e.g., `C:\Python312\python.exe`)
+
+To add Python to PATH:
+1. Search "Edit the system environment variables" in Start
+2. Click "Environment Variables"
+3. Under "System variables", find "Path" and click "Edit"
+4. Click "New" and add your Python folder (e.g., `C:\Python312`)
+5. Click "OK" and restart Command Prompt
 
 ## Code Grade: 80/100
 
