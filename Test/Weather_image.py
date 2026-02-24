@@ -8,6 +8,8 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from utils import get_weather_inputs, DEFAULT_OUTPUT_DIR
 
+ee.Initialize(project='solid-bliss-390413')
+
 VIS_PALETTE = [
     '#000066', '#000099', '#2200B4', '#6600FF', '#9900FF', '#0000FF', 
     '#0E6DC4', '#5BADFF', '#69E1FD', '#66FFFF', '#93FFFF', '#66FF33', 
