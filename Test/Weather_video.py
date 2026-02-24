@@ -86,10 +86,8 @@ def create_weather_timelapse(
         
         countries, states = get_borders()
         empty = ee.Image().byte()
-        country_borders = empty.paint(featureCollection=countries, color=1, width=3)
+        country_borders = empty.paint(featureCollection=countries, color=1, width=4)
         country_borders_viz = country_borders.visualize(palette='000000', opacity=1)
-        state_borders = empty.paint(featureCollection=states, color=1, width=2)
-        state_borders_viz = state_borders.visualize(palette='444444', opacity=1)
         
         for i in range(num_images):
             try:
@@ -97,7 +95,7 @@ def create_weather_timelapse(
                 temp_visualized = img.visualize(
                     min=TEMP_MIN, max=TEMP_MAX, palette=','.join(VIS_PALETTE)
                 )
-                final_image = temp_visualized.blend(country_borders_viz).blend(state_borders_viz)
+                final_image = temp_visualized.blend(country_borders_viz)
                 
                 url = final_image.getThumbURL({
                     'region': region,
@@ -132,7 +130,7 @@ def create_weather_timelapse(
                     bbox=dict(facecolor='black', alpha=0.6, pad=5, edgecolor='white')
                 )
                 
-                ax_legend = fig.add_axes([0.35, 0.02, 0.3, 0.025])
+                ax_legend = fig.add_axes([0.02, 0.02, 0.3, 0.025])
                 temps_k = np.linspace(TEMP_MIN, TEMP_MAX, 256).reshape(1, -1)
                 cmap = mcolors.LinearSegmentedColormap.from_list('temp', VIS_PALETTE)
                 ax_legend.imshow(temps_k, cmap=cmap, aspect='auto')
